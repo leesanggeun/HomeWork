@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -24,6 +25,7 @@ import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.LightingColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -38,6 +40,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /*
  * 미완성 부분 : favicon
@@ -52,9 +55,7 @@ public class StudyActivity extends Activity {
 
 	private String addressName;// HttpGet을 통해 입력 받은 URL Name
 
-	private static String Tag; // Diaglog 'input'으로 부터 입력 받은 값을 저장
-	public static String saveTag;
-	
+	private static String Tag = ""; // Diaglog 'input'으로 부터 입력 받은 값을 저장
 
 	FragmentManager fm;
 	ActionBar actionBar;
@@ -70,8 +71,6 @@ public class StudyActivity extends Activity {
 		fm = getFragmentManager();
 
 	}// end of onCreate
-
-	
 
 	public static class TabListener<T extends Fragment> implements ActionBar.TabListener {
 
@@ -90,22 +89,17 @@ public class StudyActivity extends Activity {
 		@Override
 		public void onTabSelected(Tab tab, FragmentTransaction ft) {
 
-			// String a = tab.getTag().toString();
-			String tabUrlTag = tab.getTag().toString();
-			saveTag = tabUrlTag;
-
+			//String tabUrlTag = tab.getTag().toString();
 			Fragment myFragment = myActivity.getFragmentManager().findFragmentByTag(myTag);
-
-			// urlNameSend = tab.getText().toString();
-
-			// Check if the fragment is already initialized
 			if (myFragment == null) {
 				// If not, instantiate and add it to the activity
 				myFragment = Fragment.instantiate(myActivity, myClass.getName());
+				Bundle args = new Bundle();
+				args.putString(Fragb.URLNAME_ID, myTag);
+				myFragment.setArguments(args);
 				ft.add(android.R.id.content, myFragment, myTag);
 
 				Log.i("onTabSelected", "myTag --->>>>>" + myTag);
-
 			}// end of if
 			else {
 
@@ -167,8 +161,6 @@ public class StudyActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}// end of onOptionsItemSelected
 
-
-
 	public void Text() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("사이트 주소를 입력해 주세요");
@@ -182,18 +174,31 @@ public class StudyActivity extends Activity {
 		builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
 
-				HttpLoadThread httpLoadThread = new HttpLoadThread();
-
-				httpLoadThread.start();
-
 				Tag = input.getText().toString();
 
-				FragmentTransaction ft2 = fm.beginTransaction();
+				if (Tag.equals(null) || Tag.equals(""))
+				{
 
-				ft2.replace(R.id.fragArea, new Fragb());
-				ft2.addToBackStack(null);
+					Toast.makeText(StudyActivity.this, "주소를 입력해주세요.", Toast.LENGTH_SHORT).show();
 
-				ft2.commit();
+					Log.i("Tag", "Null");
+
+				}
+				else
+				{
+					HttpLoadThread httpLoadThread = new HttpLoadThread();
+
+					httpLoadThread.start();
+
+					FragmentTransaction ft2 = fm.beginTransaction();
+
+					ft2.replace(R.id.fragArea, new Fragb());
+
+					ft2.addToBackStack(null);
+
+					ft2.commit();
+
+				}
 
 			}
 
@@ -201,6 +206,7 @@ public class StudyActivity extends Activity {
 
 		builder.create();
 		builder.show();
+
 	}// end of Text()
 
 	// -----
@@ -220,8 +226,8 @@ public class StudyActivity extends Activity {
 				e.printStackTrace();
 				// TODO: handle exception
 			}
-		}// end of else
 
+		}// end of else
 	}
 
 	ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
@@ -241,7 +247,6 @@ public class StudyActivity extends Activity {
 				}
 
 				br.close();
-				// _______________________
 
 				try {
 
@@ -270,8 +275,6 @@ public class StudyActivity extends Activity {
 							actionBar.addTab(actionBar.newTab().setIcon(drawable)
 
 									.setText(addressName)
-
-									.setTag(Tag)
 
 									.setTabListener(new TabListener<Fragb>(StudyActivity.this, Tag, Fragb.class)));
 
